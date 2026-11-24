@@ -1,0 +1,78 @@
+/* PHASE 3 — Motion system & subtle 3D depth */
+:root { --motion-ease: cubic-bezier(.2,.75,.25,1); }
+html { scroll-behavior: smooth; }
+.hero__visual { perspective: 1000px; }
+.portrait-frame {
+  transform-style: preserve-3d;
+  transition: transform .45s var(--motion-ease), box-shadow .45s var(--motion-ease);
+  will-change: transform;
+}
+.portrait-frame:hover { box-shadow: var(--shadow-soft), 0 0 60px rgba(155,123,255,.28); }
+.floating-chip { animation: chip-float 5.5s ease-in-out infinite; }
+.floating-chip--location { animation-delay: -2.2s; }
+.project-card, .education-item, .contact-method {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transition: transform .28s var(--motion-ease), border-color .28s ease, box-shadow .28s ease;
+}
+.project-card:hover {
+  border-color: rgba(53,216,232,.42);
+  box-shadow: 0 18px 48px rgba(0,0,0,.2), 0 0 24px rgba(155,123,255,.08);
+}
+.project-card__visual, .project-card__body > * { transform: translateZ(12px); }
+.site-header { transition: padding .25s ease, background .25s ease, box-shadow .25s ease; }
+.site-header.is-scrolled { box-shadow: 0 8px 30px rgba(0,0,0,.16); }
+.scroll-progress {
+  position: fixed; z-index: 50; inset: 0 auto auto 0; width: 100%; height: 3px;
+  transform: scaleX(0); transform-origin: left center;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 14px rgba(53,216,232,.55); pointer-events: none;
+}
+.js .reveal { opacity: 0; transform: translate3d(0,24px,0); transition: opacity .7s var(--motion-ease), transform .7s var(--motion-ease); }
+.js .reveal.is-visible { opacity: 1; transform: translate3d(0,0,0); }
+.js .project-card.reveal.is-visible, .js .education-item.reveal.is-visible {
+  transition: transform .28s var(--motion-ease), border-color .28s ease, box-shadow .28s ease;
+  transition-delay: 0s;
+}
+.js .reveal[data-delay="1"] { transition-delay: .08s; }
+.js .reveal[data-delay="2"] { transition-delay: .16s; }
+.js .reveal[data-delay="3"] { transition-delay: .24s; }
+@keyframes chip-float { 0%,100% { translate: 0 0; } 50% { translate: 0 -9px; } }
+@media (hover: none), (pointer: coarse) {
+  .project-card:hover, .education-item:hover { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .js .reveal { opacity: 1; transform: none; }
+}
+
+/* PHASE 4 — Lenis (smooth scroll) */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+/* PHASE 4 — Motion mengatur transform & opacity lewat JS, jadi transisi CSS untuk
+   keduanya dimatikan agar tidak saling menarik (jitter). Transisi warna/border tetap hidup. */
+html.motion-on .reveal,
+html.motion-on .project-card,
+html.motion-on .education-item,
+html.motion-on .portrait-frame,
+html.motion-on .button,
+html.motion-on .tech-item,
+html.motion-on .contact-method {
+  transition-property: border-color, background-color, background-position, box-shadow, color !important;
+}
+html.motion-on .button:hover,
+html.motion-on .tech-item:hover,
+html.motion-on .contact-method:hover,
+html.motion-on .education-item:hover { transform: none; }
+
+/* PHASE 4 — Scene 3D (Three.js): kanvas latar tetap di belakang seluruh konten */
+#scene3d {
+  position: fixed; z-index: -1; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; opacity: 0; transition: opacity 1.2s ease;
+}
+#scene3d.is-ready { opacity: 1; }
+/* Cincin CSS lama disembunyikan saat 3D aktif agar tidak dobel; glow lembut tetap dipakai. */
+html.scene-on .hero-orb--front { display: none; }

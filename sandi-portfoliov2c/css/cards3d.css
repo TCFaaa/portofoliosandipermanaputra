@@ -1,0 +1,94 @@
+/* PHASE 5 — "Depth Slab": efek 3D semua card (lihat js/cards3d.js).
+   JS hanya memberi CSS variables (--rx, --ry, --px, --py, --lift, --pz, --glow, --mx, --my, --ang);
+   seluruh tampilan diatur di sini. */
+html.c3d-on { --c3d-glare: rgba(255,255,255,.17); --c3d-shadow: color-mix(in srgb, var(--accent) 55%, transparent); }
+html.c3d-on[data-theme="light"] { --c3d-glare: rgba(112,73,223,.11); --c3d-shadow: color-mix(in srgb, var(--accent) 38%, transparent); }
+
+/* Card: saat diam tidak ada transform (teks tetap tajam). Saat aktif (.is-live) memakai perspektif sendiri + tilt dari variable.
+   Selector dibuat spesifik agar menang atas aturan lama (.js .reveal.is-visible, :hover bawaan, dst.). */
+html.c3d-on body .c3d.c3d {
+  transform-style: preserve-3d;
+  transition-property: border-color, background-color, box-shadow !important;
+}
+html.c3d-on body .c3d.c3d:hover { transform: none; }  /* hover lama (translateY/X) dimatikan, termasuk hover "menempel" di layar sentuh */
+html.c3d-on body .c3d.c3d.is-live {
+  transform: perspective(900px) translateZ(calc(var(--pz, 0) * 1px)) rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg));
+  translate: 0 calc(var(--lift, 0) * -4px);
+  will-change: transform;
+}
+html.c3d-on [data-c3d-pass] { transform-style: preserve-3d; }
+
+/* Lapisan isi: naik ke depan sesuai --d, bergeser berlawanan arah kursor (parallax).
+   Memakai properti `translate` agar tidak bentrok dengan transform lain (mis. hover tombol). */
+html.c3d-on [data-d] {
+  translate: calc(var(--px, 0) * var(--d, 0) * -0.28px) calc(var(--py, 0) * var(--d, 0) * -0.28px) calc(2px + var(--lift, 0) * var(--d, 0) * 1px);
+}
+
+/* Card lama yang memakai overflow:hidden harus dibuka agar lapisan bisa keluar bidang. Pemotongan dipindah ke dalam. */
+html.c3d-on .project-card, html.c3d-on .about-card--main, html.c3d-on .contact-card { overflow: visible; }
+html.c3d-on .project-card__inner { overflow: visible; transform: none; }
+html.c3d-on .projects-stage, html.c3d-on .project-grid { perspective: none; }
+html.c3d-on .about-card--main::after { display: none; }
+html.c3d-on .portrait-frame { transition: none; }
+
+/* Elemen tambahan (disisipkan JS) */
+.c3d-fx, .c3d-clip, .c3d-plate, .c3d-shadow { position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; }
+.c3d--bare > .c3d-fx, .c3d--bare > .c3d-plate, .c3d--bare > .c3d-shadow { inset: -10px -12px; border-radius: 14px; }
+
+.c3d-clip { inset: 0; overflow: hidden; translate: 0 0 -2px; }
+.about-card--main > .c3d-clip::after {
+  position: absolute; right: -95px; bottom: -130px; width: 290px; height: 290px; border: 1px solid rgba(155,123,255,.18); border-radius: 50%; content: "";
+  box-shadow: 0 0 0 28px rgba(155,123,255,.025), 0 0 0 58px rgba(53,216,232,.02);
+}
+
+/* Lempeng kaca di belakang card: ukurannya dikompensasi perspektif supaya pas saat diam, lalu terlihat sebagai tumpukan saat card miring. */
+.c3d-plate {
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent-2) 5%, transparent);
+  opacity: calc(var(--lift, 0) * 0.9);
+}
+.c3d-plate--1 { translate: 0 0 calc(var(--lift, 0) * -18px); scale: calc(1 + var(--lift, 0) * 0.02); }
+.c3d-plate--2 { translate: 0 0 calc(var(--lift, 0) * -36px); scale: calc(1 + var(--lift, 0) * 0.04); opacity: calc(var(--lift, 0) * 0.5); }
+
+/* Bayangan berwarna melayang, bergeser berlawanan arah tilt */
+.c3d-shadow {
+  inset: 8px; border-radius: 40%; background: radial-gradient(closest-side, var(--c3d-shadow), transparent);
+  translate: calc(var(--px, 0) * -20px) calc(var(--py, 0) * -20px + var(--lift, 0) * 16px) calc(var(--lift, 0) * -60px);
+  opacity: calc(var(--lift, 0) * 0.5);
+}
+
+/* Kilau permukaan + cahaya tepi prismatik + riak klik */
+.c3d-fx { overflow: hidden; translate: 0 0 1px; }
+.c3d-glare {
+  position: absolute; inset: 0; opacity: var(--glow, 0);
+  background:
+    radial-gradient(230px circle at calc(var(--mx, 50) * 1%) calc(var(--my, 50) * 1%), var(--c3d-glare), transparent 62%),
+    radial-gradient(440px circle at calc(var(--mx, 50) * 1%) calc(var(--my, 50) * 1%), color-mix(in srgb, var(--accent-2) 14%, transparent), transparent 70%);
+}
+.c3d-edge {
+  position: absolute; inset: 0; padding: 1.5px; border-radius: inherit; opacity: var(--glow, 0);
+  background: conic-gradient(from calc(var(--ang, 0) * 1deg), transparent 0deg, var(--accent-2) 38deg, var(--accent) 78deg, transparent 135deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+.c3d-ripple {
+  position: absolute; width: var(--size, 400px); height: var(--size, 400px); margin: calc(var(--size, 400px) / -2) 0 0 calc(var(--size, 400px) / -2);
+  border: 1.5px solid color-mix(in srgb, var(--accent-2) 80%, white); border-radius: 50%; pointer-events: none; transform: scale(0);
+  background: radial-gradient(circle, transparent 58%, color-mix(in srgb, var(--accent) 24%, transparent) 80%, transparent 100%);
+  animation: c3d-ripple .95s cubic-bezier(.16, .8, .3, 1) forwards;
+}
+@keyframes c3d-ripple { from { transform: scale(0); opacity: .95; } to { transform: scale(1); opacity: 0; } }
+
+/* Efek berat hanya dirender saat card aktif */
+.c3d:not(.is-live) > .c3d-shadow, .c3d:not(.is-live) > .c3d-fx { display: none; }
+
+/* Mode sentuh (HP): isi card diratakan (tanpa preserve-3d) supaya tidak ada sorting layer 3D yang berkedip. */
+html.c3d-touch body .c3d.c3d, html.c3d-touch [data-c3d-pass] { transform-style: flat; }
+html.c3d-touch [data-d] { translate: none; }
+html.c3d-touch .c3d-plate, html.c3d-touch .c3d-shadow { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .c3d-fx, .c3d-plate, .c3d-shadow { display: none; }
+}
